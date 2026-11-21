@@ -1,0 +1,36 @@
+rederive — notices and attribution
+==================================
+
+This repository (the binding layer) is Copyright SoMaCoSF and is
+licensed under the Mozilla Public License 2.0 (see LICENSE).
+
+THE KERNEL
+----------
+The geometry kernel this crate wraps is OpenGeometry, from
+github.com/OpenGeometry-io/OpenGeometry, used as a pinned git
+dependency at commit 61c05b12790a534dbb3c7a8a94fd4f9d98ffac07.
+
+  Copyright: OpenGeometry contributors (the kernel's license file
+  names no individual holder; the kernel is maintained by the
+  Ploterr team).
+  License: Mozilla Public License 2.0.
+
+The kernel is used unmodified, never vendored into this repository,
+and never forked. If you build against this crate, Cargo fetches the
+kernel from its own repository at the pinned commit; its license
+travels with it.
+
+FLOORKIT / PLOTERR
+------------------
+Floorkit is a proprietary product of Ploterr (per-hostname license
+key, usage telemetry). No Floorkit code, SDK, or assets are used in
+this repository. Floorkit appears in the documentation only as the
+published proof that the kit-as-data pattern works in the wild; the
+capability is emulated here, never licensed.
+
+THE RECORD LAYER
+----------------
+The IMBUUID record layer this crate binds to is not part of this
+repository. This repository holds the interface to the identity
+layer — records named by opaque id, parameters across a seam — not
+the identity layer itself.

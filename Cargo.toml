@@ -1,0 +1,12 @@
+# rederive — workspace root.
+# The binding layer: IMBUUID record -> OpenGeometry kernel derivation.
+# See README.md for the architecture and docs/DECISIONS.md for the rulings
+# this workspace is built under. License: MPL-2.0 (see LICENSE, NOTICE).
+
+[workspace]
+resolver = "2"
+members = ["crates/rederive"]
+
+[workspace.package]
+edition = "2021"
+license = "MPL-2.0"
