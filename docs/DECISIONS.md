@@ -20,6 +20,7 @@ flowchart LR
     E --> F["(f) Route B<br/>re-derive, don't import"]
     F --> G["(g) the pipe<br/>.rvt → record → derivation"]
     G --> H["(h) rederive stands alone<br/>a release vehicle"]
+    H --> I["(i) connectors<br/>the adoption mechanics"]
 ```
 
 ## (a) The inversion: the record is the truth
@@ -131,3 +132,20 @@ flowchart LR
   a standalone release vehicle carries the addressing standard into
   every adoption.
 - **Status:** DECIDED (this repository is the act).
+
+## (i) Connectors are the adoption mechanics
+
+- **Decision:** `rederive` also carries the connector types — the
+  mapping layer between IMBUUID-addressed records and the
+  3D/geospatial tool world. One contract for all: INGEST source →
+  addressed records · DERIVE via the kernel · EMIT records → source
+  format, every transform receipted to the record ids it touched.
+  Every tool that pipes through rederive speaks IMBUUID.
+- **Date:** 2026-11-21, 13:13 PT.
+- **Reason:** A derivation layer nobody can connect to does not get
+  adopted; connectors are how the addressing standard travels into
+  the tools people already use — the release vehicle (h) needs its
+  mechanics.
+- **Status:** DECIDED (register and honest states in
+  docs/CONNECTORS.md; implementations land per connector, none
+  claimed early).

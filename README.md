@@ -87,6 +87,14 @@ First consumers, in order: the ITPM app (per-component solids and
 measure under the lifecycle record), rustIVF (kit solids from kit
 data), the encoder (derivation cross-checks at ingest verification).
 
+The repo also carries the **connector types** — the mapping layer
+between addressed records and the 3D/geospatial tool world (Revit,
+Onshape, Blender, kit catalogs), one contract for all: ingest to
+records, derive via the kernel, emit from records, receipt every
+transform. Connectors are the adoption mechanics: every tool that
+pipes through rederive speaks IMBUUID. See
+[docs/CONNECTORS.md](docs/CONNECTORS.md).
+
 ## Status
 
 Skeleton. The public interface is fixed as typed signatures

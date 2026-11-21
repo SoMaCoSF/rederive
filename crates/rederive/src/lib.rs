@@ -32,6 +32,8 @@
 //! contracts. Bodies land with the first measured derivation proof
 //! (see `docs/OPEN-ITEMS.md` in the repository).
 
+pub mod connectors;
+
 /// An opaque record identifier.
 ///
 /// The id is an IMBUUID address rendered as text by the record layer.
