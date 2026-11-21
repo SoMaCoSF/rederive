@@ -71,12 +71,21 @@ claimed as: proven reader, unproven derivation, probe running.
 The connector is built and offline-verified (SOM-DOC-10886):
 read-only slurp of documents, elements, parts, metadata and BOMs,
 emitting encoder-shaped rows with source identity carried in the
-keymap; offline tests 16/16. Live use is blocked, and the block is
-named: both founder accounts are on Onshape's Pro Discovery tier,
-which refuses API key creation **and** OAuth app registration — no
-credential path exists on that tier. Unblocking is a tier change
-(founder decision) or the answer to the open question of how Airsup
-authenticates on the same tier. No live claim is made.
+keymap; offline tests 16/16 — **re-run and re-verified 2026-11-21
+on the current tree: 16/16 PASS this run**. The identity mapping
+(`onshape:<documentId>/<wvm kind><wvm id>/e/<elementId>/p/<partId>`)
+and the slurp row shape still match the encoder contract as
+documented. One adapter gap, stated plainly: the encoder's current
+keymap rows carry source-specific id fields (ElementId +
+document GUID on the RVT lane) rather than a unified `foreign_key`
+column, and the encoder does not yet ingest slurp JSONL — the
+contract matches, the ingest adapter is not built. Live use is
+blocked, and the block is named: both founder accounts are on
+Onshape's Pro Discovery tier, which refuses API key creation
+**and** OAuth app registration — no credential path exists on
+that tier. Unblocking is a tier change (founder decision) or the
+answer to the open question of how Airsup authenticates on the
+same tier. No live claim is made.
 
 ### blender
 
@@ -85,6 +94,18 @@ Blender's role is the render/emit side: presentation of derivations
 The estate's Blender-driving code passes its local suite, but real
 Blender execution has never been acceptance-run on the founder's
 hardware — graded **UNVERIFIED**, and the register claims no more.
+Freshness check 2026-11-21: no Blender binary is reachable on the
+Witness VM at all — not on PATH, not in system dirs, not vendored
+anywhere in the workspace trees (imbue/vendor holds ffmpeg, VLC
+and WebView2 only; the one "blender" path in the tree is a
+harvested documentation file). A headless emit proof therefore
+cannot run on this VM; it runs on OMEN-01, where Blender lives
+and which is the acceptance authority for this class of claim.
+This also gates the lane below: AnyMachine/AnyKit sits **on**
+Blender — Blender is the kit system's host — so the Blender host
+proof (binary + version + `bpy` Python API in a headless run) is
+the host proof for the AnyMachine connector, and it is owed on
+OMEN-01, not here.
 
 ### anymachine / anykit
 
@@ -92,4 +113,7 @@ A candidate, recorded so the owed work is visible. The kit-as-data
 judgment stands on other evidence (Floorkit's published pattern;
 the estate's IVF kit judgment): author the kit once as data, derive
 the rest. For this source line, no REA has been run, no license
-verified, nothing absorbed. State: **CANDIDATE**.
+verified, nothing absorbed. State: **CANDIDATE**. Host dependency
+(founder, 2026-11-21): AnyMachine/AnyKit sits on Blender — when
+the REA runs, its first question is the Blender host proof owed
+in the blender entry above.
