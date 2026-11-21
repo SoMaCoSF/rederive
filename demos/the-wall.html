@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rederive · the wall — record → derivation, with the check</title>
+<style>
+  body{background:#0b0d0f;color:#e8ecee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:28px 20px 40px;}
+  .wrap{max-width:1060px;margin:0 auto;}
+  h1{font-size:20px;font-weight:600;letter-spacing:.04em;margin:0 0 4px;}
+  h1 .gold{color:#C9A227;}
+  .sub{color:#9aa4ab;font-size:13px;margin:0 0 6px;max-width:74ch;line-height:1.5;}
+  .claim{color:#e8ecee;font-size:13px;border-left:2px solid #C9A227;padding-left:10px;margin:14px 0 20px;}
+  .cols{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;}
+  .panel{background:#101315;border:1px solid #23282d;border-radius:4px;padding:14px 16px;}
+  .rec{width:300px;}
+  .stage{flex:1;min-width:320px;text-align:center;}
+  .stage canvas{image-rendering:pixelated;cursor:grab;}
+  .stage canvas:active{cursor:grabbing;}
+  .ptitle{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#9aa4ab;letter-spacing:.08em;margin:0 0 10px;}
+  table{border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;}
+  td{padding:3px 10px 3px 0;color:#c7ced3;vertical-align:top;}
+  td.k{color:#9aa4ab;}
+  .json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.65;color:#c7ced3;white-space:pre-wrap;word-break:break-all;}
+  .json .k{color:#9aa4ab;}
+  .meas{width:100%;margin-top:4px;}
+  .meas td{border-top:1px solid #23282d;padding:7px 10px 7px 0;}
+  .meas .big{font-size:15px;color:#e8ecee;}
+  .delta{color:#C9A227;}
+  .ctl{margin-top:14px;border-top:1px solid #23282d;padding-top:12px;}
+  .ctl label{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#9aa4ab;margin:10px 0 4px;}
+  .ctl label b{color:#e8ecee;font-weight:400;}
+  .ctl input[type=range]{width:100%;accent-color:#C9A227;}
+  .tag{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.06em;border:1px solid #2a2f34;border-radius:2px;padding:2px 7px;color:#9aa4ab;}
+  .prov{color:#77828a;font-size:11.5px;line-height:1.6;max-width:88ch;margin-top:26px;border-top:1px solid #23282d;padding-top:12px;}
+  .foot{color:#5d676e;font-size:11px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .foot a{color:#9aa4ab;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>rederive <span class="gold">/</span> the wall</h1>
+  <p class="sub">One wall record, a door opening in it. The record carries parameters and nothing else; the solid is re-derived from those parameters, measured, and graded against the analytic volume computed from the same parameters. Source geometry is the check, never the source. Move a parameter and the derivation follows.</p>
+  <p class="claim">Record → derivation, with the check.</p>
+
+  <div class="cols">
+    <div class="panel rec">
+      <p class="ptitle">THE RECORD — RecordParams, as handed across the seam</p>
+      <div class="json" id="recjson"></div>
+      <div class="ctl">
+        <label>opening_width_m — <b id="owv"></b></label>
+        <input type="range" id="ow" min="0.60" max="1.80" step="0.05" value="0.90">
+        <label>opening_offset_m — <b id="ofv"></b></label>
+        <input type="range" id="of" min="0.30" max="4.80" step="0.05" value="2.40">
+      </div>
+      <p style="margin:14px 0 0"><span class="tag">REFERENCE DERIVATION</span></p>
+    </div>
+
+    <div class="panel stage">
+      <p class="ptitle" style="text-align:left">THE DERIVED SOLID — VOXEL STACK AT 0.05 M, DRAG TO SPIN</p>
+      <canvas id="cv" width="520" height="392"></canvas>
+      <table class="meas">
+        <tr><td class="k">derived volume (voxel count × voxel³)</td><td class="big" id="m-derived">—</td></tr>
+        <tr><td class="k">analytic volume ((L·H − w·h) · T)</td><td class="big" id="m-analytic">—</td></tr>
+        <tr><td class="k">delta</td><td class="big delta" id="m-delta">—</td></tr>
+        <tr><td class="k">voxels filled / grid</td><td id="m-vox">—</td></tr>
+        <tr><td class="k">validity (reference)</td><td id="m-valid">—</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p class="prov">Provenance: reference derivation, computed in-page — the solid is voxelised from the record's parameters and measured by counting; the analytic volume is computed from the same parameters. This is NOT kernel output: the OpenGeometry kernel's own numbers land with the pipe proof (harvest SOM-DOC-10902, open items). Parameters snap to the 0.05 m voxel grid, so the reference measure is exact on this grid.</p>
+  <p class="foot">rederive — geometry as a derivation of the record · <a href="https://github.com/SoMaCoSF/rederive">github.com/SoMaCoSF/rederive</a> · <a href="index.html">all demos</a></p>
+</div>
+
+<script>
+"use strict";
+/* ---- voxel volume + stack renderer, rustgis-sprite semantics (SOM-DOC-10898) ---- */
+class Volume{
+  constructor(w,d,h){this.w=w;this.d=d;this.h=h;this.cells=new Uint8Array(w*d*h);}
+  idx(x,y,z){return (z*this.d+y)*this.w+x;}
+  get(x,y,z){if(x<0||y<0||z<0||x>=this.w||y>=this.d||z>=this.h)return 0;return this.cells[this.idx(x,y,z)];}
+  set(x,y,z,v){if(x<0||y<0||z<0||x>=this.w||y>=this.d||z>=this.h)return;this.cells[this.idx(x,y,z)]=v;}
+  fillBox(x0,y0,x1,y1,z,v){const X=Math.min(x1,this.w-1),Y=Math.min(y1,this.d-1);for(let y=y0;y<=Y;y++)for(let x=x0;x<=X;x++)this.set(x,y,z,v);}
+  filledCount(){let n=0;for(let i=0;i<this.cells.length;i++)if(this.cells[i]!==0)n++;return n;}
+  topLayer(){for(let z=this.h-1;z>=0;z--){for(let i=0;i<this.w*this.d;i++)if(this.cells[z*this.w*this.d+i]!==0)return z;}return -1;}
+}
+const PAL=[null,[96,108,120],[44,122,116],[150,84,52],[201,162,39],[168,196,200],[38,42,48],[232,236,238],[110,88,160],[70,130,76]];
+function renderStack(vol,turn){
+  const w=vol.w,h=vol.d,count=vol.topLayer()+1;
+  const sin=Math.sin(turn),cos=Math.cos(turn);
+  const ex=Math.abs(w*cos)+Math.abs(h*sin),ey=Math.abs(w*sin)+Math.abs(h*cos);
+  const liftTotal=Math.round((count-1)*1.0);
+  const cw=Math.ceil(ex)+2,ch=Math.ceil(ey*0.75)+liftTotal+2;
+  const scx=(w-1)/2,scy=(h-1)/2,dcx=(cw-1)/2;
+  const groundCy=(ch-2)-ey*0.75*0.5;
+  const img=new ImageData(cw,ch);
+  for(let z=0;z<count;z++){
+    const dcy=groundCy-Math.round(z*1.0);
+    for(let py=0;py<ch;py++)for(let px=0;px<cw;px++){
+      const dx=px-dcx,dy=(py-dcy)/0.75;
+      const sx=scx+dx*cos+dy*sin,sy=scy-dx*sin+dy*cos;
+      const ix=Math.round(sx),iy=Math.round(sy);
+      if(ix>=0&&iy>=0&&ix<w&&iy<h){
+        const idx=vol.get(ix,iy,z);
+        if(idx!==0){const c=PAL[idx];const i=(py*cw+px)*4;img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=255;}
+      }
+    }
+  }
+  return {img,cw,ch};
+}
+
+/* ---- the record ---- */
+const P={type_tag:"wall:basic-200",length_m:6.00,height_m:3.00,thickness_m:0.20,opening_width_m:0.90,opening_height_m:2.10,opening_offset_m:2.40,voxel_m:0.05};
+function showRecord(){
+  const s={record:"demo wall record (illustrative instance)",type_tag:P.type_tag,scalars:{
+    length_m:P.length_m.toFixed(2),height_m:P.height_m.toFixed(2),thickness_m:P.thickness_m.toFixed(2),
+    opening_width_m:P.opening_width_m.toFixed(2),opening_height_m:P.opening_height_m.toFixed(2),
+    opening_offset_m:P.opening_offset_m.toFixed(2),voxel_m:P.voxel_m.toFixed(2)}};
+  document.getElementById("recjson").textContent=JSON.stringify(s,null,1);
+  document.getElementById("owv").textContent=P.opening_width_m.toFixed(2);
+  document.getElementById("ofv").textContent=P.opening_offset_m.toFixed(2);
+}
+/* ---- the derivation: parameters -> voxel solid -> measure ---- */
+function derive(){
+  const v=P.voxel_m;
+  const nx=Math.round(P.length_m/v),ny=Math.round(P.thickness_m/v),nz=Math.round(P.height_m/v);
+  const vol=new Volume(nx,ny,nz);
+  const ox0=Math.round(P.opening_offset_m/v),ox1=ox0+Math.round(P.opening_width_m/v)-1,oz1=Math.round(P.opening_height_m/v)-1;
+  for(let z=0;z<nz;z++)for(let x=0;x<nx;x++){
+    if(x>=ox0&&x<=ox1&&z<=oz1)continue;
+    vol.fillBox(x,0,x,ny-1,z,(z===nz-1)?6:1);
+  }
+  const filled=vol.filledCount();
+  const derived=filled*v*v*v;
+  const analytic=(P.length_m*P.height_m-P.opening_width_m*P.opening_height_m)*P.thickness_m;
+  return {vol,filled,nx,ny,nz,derived,analytic,delta:Math.abs(derived-analytic)};
+}
+let cur=derive();
+function showMeasures(){
+  document.getElementById("m-derived").textContent=cur.derived.toFixed(3)+" m³";
+  document.getElementById("m-analytic").textContent=cur.analytic.toFixed(3)+" m³";
+  const pct=cur.analytic>0?(cur.delta/cur.analytic*100):0;
+  document.getElementById("m-delta").textContent=cur.delta.toFixed(3)+" m³ ("+pct.toFixed(2)+"%)";
+  document.getElementById("m-vox").textContent=cur.filled.toLocaleString("en-US")+" / "+cur.nx+" × "+cur.ny+" × "+cur.nz;
+  document.getElementById("m-valid").textContent="closed voxel solid — watertight by construction (reference)";
+}
+/* ---- view ---- */
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+let angle=-0.65,dragging=false,lastX=0,lastMove=0,dirty=true;const cache=new Map();
+cv.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;lastMove=performance.now();});
+addEventListener("pointermove",e=>{if(dragging){angle+=(e.clientX-lastX)*0.011;lastX=e.clientX;lastMove=performance.now();dirty=true;}});
+addEventListener("pointerup",()=>{dragging=false;});
+function draw(){
+  const bucket=((Math.round(angle/(Math.PI/60))%120)+120)%120;
+  let off=cache.get(bucket);
+  if(!off){
+    const {img,cw,ch}=renderStack(cur.vol,bucket*Math.PI/60);
+    off=document.createElement("canvas");off.width=cw;off.height=ch;
+    off.getContext("2d").putImageData(img,0,0);off._cw=cw;off._ch=ch;
+    cache.set(bucket,off);
+  }
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const s=3,dw=off._cw*s,dh=off._ch*s;
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(off,(cv.width-dw)/2,cv.height-dh-6,dw,dh);
+}
+function frame(){
+  if(!dragging&&performance.now()-lastMove>2500){angle+=0.004;dirty=true;}
+  if(dirty){draw();dirty=false;}
+  requestAnimationFrame(frame);
+}
+/* ---- controls ---- */
+function rederive(){
+  const ow=document.getElementById("ow"),of=document.getElementById("of");
+  P.opening_width_m=parseFloat(ow.value);
+  const maxOff=Math.floor((P.length_m-P.opening_width_m-0.30)/0.05)*0.05;
+  if(P.opening_offset_m>maxOff){P.opening_offset_m=maxOff;of.value=maxOff.toFixed(2);}
+  P.opening_offset_m=parseFloat(of.value);
+  cur=derive();cache.clear();showRecord();showMeasures();dirty=true;
+}
+document.getElementById("ow").addEventListener("input",rederive);
+document.getElementById("of").addEventListener("input",rederive);
+showRecord();showMeasures();draw();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

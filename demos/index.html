@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rederive · demos</title>
+<style>
+  body{background:#0b0d0f;color:#e8ecee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:28px 20px 40px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:22px;font-weight:600;letter-spacing:.04em;margin:0 0 4px;}
+  h1 .gold{color:#C9A227;}
+  .sub{color:#9aa4ab;font-size:13.5px;line-height:1.55;max-width:70ch;margin:0 0 22px;}
+  .card{display:block;background:#101315;border:1px solid #23282d;border-radius:4px;padding:16px 18px;margin:0 0 12px;text-decoration:none;color:#e8ecee;}
+  .card:hover{border-color:#C9A227;}
+  .card .t{font-size:15px;font-weight:600;}
+  .card .t .gold{color:#C9A227;}
+  .card .d{color:#9aa4ab;font-size:12.5px;line-height:1.55;margin-top:4px;max-width:74ch;}
+  .card .meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#77828a;margin-top:8px;}
+  .prov{color:#77828a;font-size:11.5px;line-height:1.6;max-width:88ch;margin-top:26px;border-top:1px solid #23282d;padding-top:12px;}
+  .foot{color:#5d676e;font-size:11px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .foot a{color:#9aa4ab;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>rederive <span class="gold">/</span> demos</h1>
+  <p class="sub">Small demos of the binding layer: geometry as a derivation of the record. Each demo is one self-contained HTML file in the Kestrel weight class — no build step, no external assets, works from file:// or any static host. A sprite stack is the cheapest rendered derivation of a record, so two of the three demos render with it.</p>
+
+  <a class="card" href="turntable.html">
+    <div class="t">turntable <span class="gold">— identity → form</span></div>
+    <div class="d">Five records rendered as sprite stacks derived from their own identity bytes: type picks the silhouette, identity seeds the variation, lifecycle state restyles the same record's form. Drag to spin.</div>
+    <div class="meta">ONE FILE · DERIVATION IN-PAGE · SPRITE STACKS PER RUSTGIS-SPRITE (SOM-DOC-10898)</div>
+  </a>
+
+  <a class="card" href="the-wall.html">
+    <div class="t">the wall <span class="gold">— record → derivation, with the check</span></div>
+    <div class="d">One wall record with a door opening. The solid is re-derived from the record's parameters and measured; the analytic volume from the same parameters is the check. Move a parameter, the derivation follows.</div>
+    <div class="meta">ONE FILE · REFERENCE DERIVATION — KERNEL NUMBERS LAND WITH THE PIPE PROOF</div>
+  </a>
+
+  <a class="card" href="the-pipe.html">
+    <div class="t">the pipe <span class="gold">— one record, two connectors</span></div>
+    <div class="d">The same wall enters as a real Revit encoder record and leaves as an Onshape part under the connector's identity mapping. The foreign keys change; the IMBUUID between them does not.</div>
+    <div class="meta">ONE FILE · REVIT SIDE REAL (SOM-DOC-10884) · ONSHAPE INSTANCE ILLUSTRATIVE (SOM-DOC-10886)</div>
+  </a>
+
+  <p class="prov">Provenance: demos are illustrative surfaces over the rederive interface — what is real, what is reference, and what is illustrative is stated on each page. Source: <a style="color:#9aa4ab" href="https://github.com/SoMaCoSF/rederive">github.com/SoMaCoSF/rederive</a> (demos/ directory).</p>
+  <p class="foot">rederive — geometry as a derivation of the record · the kernel is OpenGeometry (MPL-2.0, pinned, wrapped — never vendored)</p>
+</div>
+</body>
+</html>

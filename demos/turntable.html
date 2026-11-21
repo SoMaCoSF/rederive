@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rederive · turntable — identity → form</title>
+<style>
+  body{background:#0b0d0f;color:#e8ecee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:28px 20px 40px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{font-size:20px;font-weight:600;letter-spacing:.04em;margin:0 0 4px;}
+  h1 .gold{color:#C9A227;}
+  .sub{color:#9aa4ab;font-size:13px;margin:0 0 6px;max-width:72ch;line-height:1.5;}
+  .claim{color:#e8ecee;font-size:13px;border-left:2px solid #C9A227;padding-left:10px;margin:14px 0 20px;}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 18px;}
+  .bar .lbl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#9aa4ab;letter-spacing:.08em;margin-right:2px;}
+  .sbtn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.06em;background:#14171a;color:#9aa4ab;border:1px solid #2a2f34;border-radius:3px;padding:7px 12px;cursor:pointer;}
+  .sbtn:hover{color:#e8ecee;border-color:#3a4148;}
+  .sbtn.on{color:#C9A227;border-color:#C9A227;}
+  .row{display:flex;flex-wrap:wrap;gap:14px;}
+  .card{background:#101315;border:1px solid #23282d;border-radius:4px;width:216px;padding:12px 12px 10px;cursor:pointer;}
+  .card.sel{border-color:#C9A227;}
+  .card canvas{display:block;margin:0 auto;image-rendering:pixelated;cursor:grab;}
+  .card canvas:active{cursor:grabbing;}
+  .type{font-size:13px;font-weight:600;letter-spacing:.03em;margin:8px 0 2px;}
+  .id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#9aa4ab;word-break:break-all;line-height:1.5;}
+  .params{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#c7ced3;line-height:1.65;margin-top:6px;border-top:1px solid #23282d;padding-top:6px;}
+  .params span{color:#9aa4ab;}
+  .chip{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.06em;border:1px solid #2a2f34;border-radius:2px;padding:2px 7px;margin-top:8px;color:#9aa4ab;}
+  .chip.live{color:#C9A227;border-color:#C9A227;}
+  .prov{color:#77828a;font-size:11.5px;line-height:1.6;max-width:88ch;margin-top:26px;border-top:1px solid #23282d;padding-top:12px;}
+  .foot{color:#5d676e;font-size:11px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .foot a{color:#9aa4ab;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>rederive <span class="gold">/</span> turntable</h1>
+  <p class="sub">Five records. Each form below is a sprite stack derived from the record itself: the record's <em>type</em> picks the silhouette family, its <em>identity</em> seeds the variation inside that family, its <em>lifecycle state</em> picks the palette and posture. Drag any stack to spin the row.</p>
+  <p class="claim">Form derived from the record at load — nothing pre-rendered.</p>
+
+  <div class="bar" id="states">
+    <span class="lbl">LIFECYCLE STATE — APPLIES TO EVERY RECORD</span>
+    <button class="sbtn" data-state="transit">IN TRANSIT</button>
+    <button class="sbtn on" data-state="installed">INSTALLED</button>
+    <button class="sbtn" data-state="commissioned">COMMISSIONED</button>
+    <button class="sbtn" data-state="production">IN PRODUCTION</button>
+  </div>
+
+  <div class="row" id="row"></div>
+
+  <p class="prov">Provenance: every form on this page is derived in your browser at load from the record's identity bytes — splitmix64 seeding and stack rendering per rustgis-sprite (SOM-DOC-10898). Slab and Tower are faithful ports of the crate's archetypes; Wall, Fab and Duct are demo archetypes written in the same idiom. The five record identities are illustrative demo records. Nothing is pre-rendered; there are no image assets.</p>
+  <p class="foot">rederive — geometry as a derivation of the record · <a href="https://github.com/SoMaCoSF/rederive">github.com/SoMaCoSF/rederive</a> · <a href="index.html">all demos</a></p>
+</div>
+
+<script>
+"use strict";
+/* ============ rustgis-sprite semantics, ported (SOM-DOC-10898) ============ */
+const M64=(1n<<64n)-1n;
+class Rng{
+  constructor(seed){this.s=seed&M64;}
+  next(){this.s=(this.s+0x9E3779B97F4A7C15n)&M64;let z=this.s;
+    z=((z^(z>>30n))*0xBF58476D1CE4E5B9n)&M64;
+    z=((z^(z>>27n))*0x94D049BB133111EBn)&M64;
+    return (z^(z>>31n))&M64;}
+  range(n){return n===0?0:Number(this.next()%BigInt(n));}
+  between(lo,hi){return lo+this.range(hi-lo+1);}
+  chance(p){return this.range(100)<p;}
+}
+function uuidBytes(u){const h=u.replace(/-/g,"");const b=[];for(let i=0;i<16;i++)b.push(parseInt(h.substr(i*2,2),16));return b;}
+function le64(b,o){let v=0n;for(let i=7;i>=0;i--)v=(v<<8n)|BigInt(b[o+i]);return v;}
+function seedFrom(idBytes,disc){
+  const lo=le64(idBytes,0),hi=le64(idBytes,8);
+  const rot=((hi<<23n)|(hi>>41n))&M64;
+  return (lo^rot^(BigInt(disc)<<56n))&M64;
+}
+class Volume{
+  constructor(w,d,h){this.w=w;this.d=d;this.h=h;this.cells=new Uint8Array(w*d*h);}
+  idx(x,y,z){return (z*this.d+y)*this.w+x;}
+  get(x,y,z){if(x<0||y<0||z<0||x>=this.w||y>=this.d||z>=this.h)return 0;return this.cells[this.idx(x,y,z)];}
+  set(x,y,z,v){if(x<0||y<0||z<0||x>=this.w||y>=this.d||z>=this.h)return;this.cells[this.idx(x,y,z)]=v;}
+  fillBox(x0,y0,x1,y1,z,v){const X=Math.min(x1,this.w-1),Y=Math.min(y1,this.d-1);for(let y=y0;y<=Y;y++)for(let x=x0;x<=X;x++)this.set(x,y,z,v);}
+  fillColumn(x,y,z0,z1,v){const Z=Math.min(z1,this.h-1);for(let z=z0;z<=Z;z++)this.set(x,y,z,v);}
+  topLayer(){for(let z=this.h-1;z>=0;z--){for(let i=0;i<this.w*this.d;i++)if(this.cells[z*this.w*this.d+i]!==0)return z;}return -1;}
+}
+/* Crate palette (SOM-DOC-10898): 0 empty · 1 slate · 2 teal · 3 rust · 4 gold · 5 glass · 6 frame · 7 light · 8 violet · 9 fern */
+const PAL=[null,[96,108,120],[44,122,116],[150,84,52],[201,162,39],[168,196,200],[38,42,48],[232,236,238],[110,88,160],[70,130,76]];
+const BODIES=[1,2,3,8,9];
+
+/* ---- archetype ports: Tower (0x11) and Slab (0x22) follow the crate line for line ---- */
+function tower(rng){
+  const w=rng.between(5,8),d=rng.between(5,8),h=rng.between(12,22);
+  const body=BODIES[rng.range(5)];
+  const v=new Volume(w,d,h+4);
+  for(let z=0;z<h;z++){
+    const idx=(z%4===3)?5:body;
+    let inset=0; if(z>=h-2&&rng.chance(50))inset=1;
+    if(inset===0||(w>2&&d>2))v.fillBox(inset,inset,w-1-inset,d-1-inset,z,idx);
+  }
+  v.set(w>>1,d>>1,h,6);
+  if(rng.chance(70)){
+    const ah=rng.between(1,3);
+    for(let z=h;z<h+ah;z++)v.set(w>>1,d>>1,z,6);
+    v.set(w>>1,d>>1,h+ah,4);
+  }
+  return v;
+}
+function slab(rng){
+  const w=rng.between(10,14),d=rng.between(6,9),h=rng.between(3,6);
+  const body=BODIES[rng.range(5)];
+  const v=new Volume(w,d,h+2);
+  for(let z=0;z<h;z++)v.fillBox(0,0,w-1,d-1,z,(z===h-1)?6:body);
+  const bw=rng.between(3,5),bd=rng.between(2,4);
+  const ox=rng.range(w-bw),oy=rng.range(d-bd);
+  v.fillBox(ox,oy,ox+bw-1,oy+bd-1,h,body);
+  if(rng.chance(50))v.fillBox(ox,oy,ox+bw-1,oy+bd-1,h+1,6);
+  return v;
+}
+/* ---- demo archetypes in the same idiom: Wall (0x66), Fab (0x77), Duct (0x88) ---- */
+function wallRun(rng){
+  const len=rng.between(14,18),dep=2,h=rng.between(4,6);
+  const body=BODIES[rng.range(5)];
+  const v=new Volume(len,dep,h+1);
+  for(let z=0;z<h;z++)v.fillBox(0,0,len-1,dep-1,z,body);
+  v.fillBox(0,0,len-1,dep-1,h,6);
+  for(let x=0;x<len;x+=4)for(let z=0;z<h;z++)v.fillBox(x,0,x,dep-1,z,6);
+  v.fillBox(0,0,len-1,0,h-2,5);
+  return v;
+}
+function fab(rng){
+  const w=rng.between(13,16),d=rng.between(9,12),h=rng.between(3,5);
+  const body=BODIES[rng.range(5)];
+  const v=new Volume(w,d,h+6);
+  for(let z=0;z<h;z++)v.fillBox(0,0,w-1,d-1,z,(z===h-1)?6:body);
+  const c1=rng.between(1,3),c2=rng.between(w-4,w-2);
+  for(const cx of [c1,c2]){const ch2=rng.between(2,4);for(let z=h;z<h+ch2;z++)v.set(cx,d>>1,z,6);v.set(cx,d>>1,h+ch2,6);}
+  const bw=rng.between(4,6),bd=rng.between(3,5),ox=rng.range(w-bw),oy=rng.range(d-bd);
+  v.fillBox(ox,oy,ox+bw-1,oy+bd-1,h,body);
+  if(rng.chance(60))v.fillBox(ox,oy,ox+bw-1,oy+bd-1,h+1,5);
+  return v;
+}
+function ductRun(rng){
+  const len=rng.between(13,17),z0=rng.between(7,9);
+  const body=BODIES[rng.range(5)];
+  const v=new Volume(len,5,z0+3);
+  for(let x=0;x<len;x++){const seg=(x%4===3)?6:body;v.fillBox(x,1,x,3,z0,seg);v.fillBox(x,1,x,3,z0+1,seg);}
+  for(let x=1;x<len;x+=5){v.fillColumn(x,2,1,z0-1,6);v.set(x,2,0,6);}
+  const dx=rng.between(3,len-4);
+  for(let z=z0-3;z<z0;z++)v.fillBox(dx,1,dx+1,3,z,body);
+  v.fillBox(dx,1,dx+1,3,z0-3,6);
+  for(let z=0;z<z0;z++)v.fillBox(len-1,1,len-1,3,z,6);
+  return v;
+}
+const ARCH={
+  wall:{disc:0x66,gen:wallRun},
+  slab:{disc:0x22,gen:slab},
+  fab:{disc:0x77,gen:fab},
+  duct:{disc:0x88,gen:ductRun},
+  tower:{disc:0x11,gen:tower}
+};
+function volumeFromIdentity(idStr,arch){
+  const a=ARCH[arch];
+  const rng=new Rng(seedFrom(uuidBytes(idStr),a.disc));
+  return a.gen(rng);
+}
+/* ---- stack renderer: inverse mapping, symmetric centre, squash 0.75, spacing 1.0 (the recipe) ---- */
+function renderStack(vol,turn,colorOf){
+  const w=vol.w,h=vol.d,count=vol.topLayer()+1;
+  const sin=Math.sin(turn),cos=Math.cos(turn);
+  const ex=Math.abs(w*cos)+Math.abs(h*sin),ey=Math.abs(w*sin)+Math.abs(h*cos);
+  const liftTotal=Math.round((count-1)*1.0);
+  const cw=Math.ceil(ex)+2,ch=Math.ceil(ey*0.75)+liftTotal+2;
+  const scx=(w-1)/2,scy=(h-1)/2,dcx=(cw-1)/2;
+  const groundCy=(ch-2)-ey*0.75*0.5;
+  const img=new ImageData(cw,ch);
+  for(let z=0;z<count;z++){
+    const dcy=groundCy-Math.round(z*1.0);
+    for(let py=0;py<ch;py++)for(let px=0;px<cw;px++){
+      const dx=px-dcx,dy=(py-dcy)/0.75;
+      const sx=scx+dx*cos+dy*sin,sy=scy-dx*sin+dy*cos;
+      const ix=Math.round(sx),iy=Math.round(sy);
+      if(ix>=0&&iy>=0&&ix<w&&iy<h){
+        const idx=vol.get(ix,iy,z);
+        if(idx!==0){const c=colorOf(idx);const i=(py*cw+px)*4;img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=255;}
+      }
+    }
+  }
+  return {img,cw,ch};
+}
+
+/* ============ the records ============ */
+const RECORDS=[
+  {type:"Wall segment",arch:"wall",id:"7c4d2a91-5e08-8f3a-9c21-a000000004d2",params:[["type_tag","wall:basic-200"],["length_m","6.00"],["height_m","3.00"]]},
+  {type:"Slab",arch:"slab",id:"51be77c0-92aa-84d1-b7e0-a00000000917",params:[["type_tag","slab:flat-plate"],["span_m","8.40"],["depth_m","0.25"]]},
+  {type:"Fab",arch:"fab",id:"3f90d5b8-1c64-8a52-88f9-a00000002210",params:[["type_tag","fab:cleanroom-bay"],["bays","6"],["clear_m","7.50"]]},
+  {type:"Duct run",arch:"duct",id:"9d31e6f4-77b0-83c9-a415-a00000000773",params:[["type_tag","duct:rect-galv"],["run_m","24.00"],["size","800 × 400"]]},
+  {type:"Air hub",arch:"tower",id:"2a58c0de-4f19-86b7-9d02-a00000003105",params:[["type_tag","hub:control-tower"],["pads","4"],["throughput","freight"]]}
+];
+/* ============ lifecycle state: palette + posture ============ */
+const REMAP={
+  transit:{1:[94,106,118],2:[86,100,108],3:[102,100,102],4:[126,120,100],5:[118,130,134],6:[36,40,46],7:[168,174,178],8:[98,102,120],9:[90,106,98]},
+  installed:null,
+  commissioned:{5:[202,230,234],7:[242,246,248]},
+  production:null
+};
+const STATE_LABEL={transit:"IN TRANSIT",installed:"INSTALLED",commissioned:"COMMISSIONED",production:"IN PRODUCTION"};
+let state="installed",angle=-0.65,selected=0;
+function colorOf(idx){
+  const m=REMAP[state];
+  if(m&&m[idx])return m[idx];
+  return PAL[idx];
+}
+
+/* ============ build the cards ============ */
+const row=document.getElementById("row");
+const cards=RECORDS.map((r,i)=>{
+  const vol=volumeFromIdentity(r.id,r.arch);
+  const el=document.createElement("div");el.className="card"+(i===0?" sel":"");
+  el.innerHTML=`<canvas width="232" height="176"></canvas>
+    <div class="type">${r.type}</div>
+    <div class="id">${r.id}</div>
+    <div class="params">${r.params.map(p=>`<span>${p[0]}</span> ${p[1]}`).join("<br>")}</div>
+    <span class="chip">${STATE_LABEL[state]}</span>`;
+  el.addEventListener("click",()=>{selected=i;document.querySelectorAll(".card").forEach((c,j)=>c.classList.toggle("sel",j===i));dirty=true;});
+  row.appendChild(el);
+  return {r,vol,canvas:el.querySelector("canvas"),chip:el.querySelector(".chip"),cache:new Map()};
+});
+document.getElementById("states").addEventListener("click",e=>{
+  const b=e.target.closest(".sbtn");if(!b)return;
+  state=b.dataset.state;
+  document.querySelectorAll(".sbtn").forEach(x=>x.classList.toggle("on",x===b));
+  cards.forEach(c=>{c.cache.clear();c.chip.textContent=STATE_LABEL[state];c.chip.classList.toggle("live",state==="production");});
+  dirty=true;
+});
+
+/* ============ spin: drag + idle auto-rotate, angle-bucket cache ============ */
+let dragging=false,lastX=0,lastMove=0,dirty=true;
+addEventListener("pointerdown",e=>{if(e.target.tagName==="CANVAS"){dragging=true;lastX=e.clientX;lastMove=performance.now();}});
+addEventListener("pointermove",e=>{if(dragging){angle+=(e.clientX-lastX)*0.011;lastX=e.clientX;lastMove=performance.now();dirty=true;}});
+addEventListener("pointerup",()=>{dragging=false;});
+function drawCard(c){
+  const bucket=((Math.round(angle/(Math.PI/36))%72)+72)%72;
+  const key=bucket+"|"+state;
+  let off=c.cache.get(key);
+  if(!off){
+    const {img,cw,ch}=renderStack(c.vol,bucket*Math.PI/36,colorOf);
+    off=document.createElement("canvas");off.width=cw;off.height=ch;
+    off.getContext("2d").putImageData(img,0,0);
+    off._cw=cw;off._ch=ch;
+    c.cache.set(key,off);
+  }
+  const ctx=c.canvas.getContext("2d");
+  const W=c.canvas.width,H=c.canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const s=Math.max(2,Math.min(9,Math.floor(Math.min(224/off._cw,158/off._ch))||2));
+  const dw=off._cw*s,dh=off._ch*s,ox=(W-dw)/2,oy=H-dh-8;
+  /* posture: the pad under the stack reads the state */
+  const padY=oy+dh-s*1.5,pdW=dw*0.44;
+  ctx.beginPath();ctx.ellipse(W/2,padY,pdW,7,0,0,Math.PI*2);
+  if(state==="transit"){ctx.setLineDash([4,4]);ctx.strokeStyle="#3a4148";ctx.stroke();ctx.setLineDash([]);}
+  else{ctx.fillStyle="#16191d";ctx.fill();ctx.strokeStyle=state==="production"?"#C9A227":(state==="commissioned"?"#8fa3ab":"#2a2f34");ctx.lineWidth=state==="production"?1.6:1;ctx.stroke();}
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(off,ox,oy,dw,dh);
+}
+function frame(){
+  if(!dragging&&performance.now()-lastMove>2500){angle+=0.0045;dirty=true;}
+  if(dirty){cards.forEach(drawCard);dirty=false;}
+  requestAnimationFrame(frame);
+}
+cards.forEach(drawCard);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
