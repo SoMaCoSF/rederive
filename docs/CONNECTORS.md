@@ -51,7 +51,7 @@ stub module carrying the contract as documentation.
 | **revit** | `.rvt` → records; records → IFC exchange bodies | Reader **PROVEN** by execution; pipe probe **IN FLIGHT** |
 | **onshape** | Onshape documents → records | Connector **BUILT + OFFLINE-VERIFIED** (SOM-DOC-10886); live use **BLOCKED** on account tier |
 | **blender** | Records → scenes / renders / turntables | Render/emit side; real execution **UNVERIFIED** |
-| **anymachine / anykit** | Kit catalogs → type + element records | **CANDIDATE** — REA not yet run |
+| **anymachine / anykit** | Kit catalogs → type + element records | **REA COMPLETE** (SOM-DOC-10905) — pattern proven, connector not built |
 
 ### revit
 
@@ -109,11 +109,30 @@ OMEN-01, not here.
 
 ### anymachine / anykit
 
-A candidate, recorded so the owed work is visible. The kit-as-data
-judgment stands on other evidence (Floorkit's published pattern;
-the estate's IVF kit judgment): author the kit once as data, derive
-the rest. For this source line, no REA has been run, no license
-verified, nothing absorbed. State: **CANDIDATE**. Host dependency
-(founder, 2026-11-21): AnyMachine/AnyKit sits on Blender — when
-the REA runs, its first question is the Blender host proof owed
-in the blender entry above.
+**REA COMPLETE 2026-11-21 (SOM-DOC-10905). State: REA-PROVEN
+PATTERN, host proof partial.** The family is `apekshik/anymachine`
++ `apekshik/anykit` (MIT, (c) 2026 Apekshik Panigrahi, verified at
+pinned commits `d5e8889` / `9ab61ca`; both already held as SoMaCoSF
+forks). It sits **on Blender** (founder correction, verified):
+headless bpy build scripts on Blender 5.2, not an add-on — one root
+Collection per machine, an armature with one bone per rigid part,
+0-1 custom properties with drivers as the control surface, no
+geometry nodes. The kit definition is data in three forms — a
+pre-build parts sheet, the build script, and emitted manifests
+(`stilt_info.json`; AnyKit `kit.json` + `dials.json` + `kit.blend`
+asset library) — and the manifests map directly onto this
+connector's contract: part -> element record, dimensions/anchors
+-> bound attributes, dials/0-1 controls -> parameter records.
+Topology: the kernel derives from records **beside** Blender,
+never inside it (records -> derivation -> Blender assembly ->
+manifest re-ingest). The pipe needs **no third-party API
+permission** — Blender is local, the code is MIT and forked, the
+kernel is the adopted pinned dep; only the family's optional
+generative front-ends (fal/Meshy/Tripo) are API-gated, and
+kit-as-data authoring bypasses them. Fit graded **STRONG**.
+Host proof: bpy headless import PASSED on OMEN-01 2026-11-21
+(Blender 5.0.1, founder-run preflight); a full kit build run at
+the 5.2 pin remains owed. First surface is the headless-subprocess
+route (`blender --background --python`), not an add-on. Owed:
+our own record-mapping schema — their formats are per-run
+artifacts, not a standard.
