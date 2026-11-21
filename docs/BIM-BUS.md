@@ -1,5 +1,5 @@
 <!--
-Ghost Catalog: SOM-DOC-10907-v1.0.0
+Ghost Catalog: SOM-DOC-10908-v1.0.0
 -->
 
 # BIM BUS — IMBUUID is the bus
